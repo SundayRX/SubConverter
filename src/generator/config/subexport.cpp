@@ -709,10 +709,10 @@ std::string proxyToClash(std::vector<Proxy> &nodes, const std::string &base_conf
         return YAML::Dump(yamlnode);
     }
 
-    //std::string output_content = rulesetToClashStr(yamlnode, ruleset_content_array, ext.overwrite_original_rules, ext.clash_new_field_name);
-    //output_content.insert(0, YAML::Dump(yamlnode));
-    rulesetToClash(yamlnode, ruleset_content_array, ext.overwrite_original_rules, ext.clash_new_field_name);
-    std::string output_content = YAML::Dump(yamlnode);
+    std::string output_content = rulesetToClashStr(yamlnode, ruleset_content_array, ext.overwrite_original_rules, ext.clash_new_field_name);
+    output_content.insert(0, YAML::Dump(yamlnode));
+    //rulesetToClash(yamlnode, ruleset_content_array, ext.overwrite_original_rules, ext.clash_new_field_name);
+    //std::string output_content = YAML::Dump(yamlnode);
 
     return output_content;
 }
