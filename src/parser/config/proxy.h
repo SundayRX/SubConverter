@@ -129,7 +129,12 @@ struct Proxy
     uint32_t HopInterval;
     StringArray Alpn;
     String ShortId;
+    String Flow;
+    String GRPCServiceName;
+    String GRPCMode;
     uint32_t CWND = 0;
+    std::vector<String> AlpnList;
+    String PacketEncoding;
 };
 
 #define SS_DEFAULT_GROUP "SSProvider"
