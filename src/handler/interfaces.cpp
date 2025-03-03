@@ -611,7 +611,7 @@ std::string subconverter(RESPONSE_CALLBACK_ARGS)
     if(nodes.empty() && insert_nodes.empty())
     {
         *status_code = 400;
-        return "No nodes were found!";
+        return "No nodes were found! surgeConfToClash";
     }
     if(!subInfo.empty() && argAppendUserinfo.get(global.appendUserinfo))
         response.headers.emplace("Subscription-UserInfo", subInfo);
@@ -1058,7 +1058,7 @@ std::string surgeConfToClash(RESPONSE_CALLBACK_ARGS)
     if(nodes.empty())
     {
         *status_code = 400;
-        return "No nodes were found!";
+        return "No nodes were found! subconverter";
     }
 
     extra_settings ext;
