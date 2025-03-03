@@ -273,8 +273,9 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
 
         processRemark(x.Remark, remarks_list, false);
 
-        tribool udp = ext.udp, tfo = ext.tfo, scv = ext.skip_cert_verify;
+        tribool udp = ext.udp, xudp = ext.xudp, tfo = ext.tfo, scv = ext.skip_cert_verify;
         udp.define(x.UDP);
+        xudp.define(x.XUDP);
         tfo.define(x.TCPFastOpen);
         scv.define(x.AllowInsecure);
 
