@@ -141,6 +141,7 @@ struct Proxy
 #define SS_DEFAULT_GROUP "SSProvider"
 #define SSR_DEFAULT_GROUP "SSRProvider"
 #define V2RAY_DEFAULT_GROUP "V2RayProvider"
+#define XRAY_DEFAULT_GROUP "XRayProvider"
 #define SOCKS_DEFAULT_GROUP "SocksProvider"
 #define HTTP_DEFAULT_GROUP "HTTPProvider"
 #define TROJAN_DEFAULT_GROUP "TrojanProvider"
