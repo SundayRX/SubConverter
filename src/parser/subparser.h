@@ -76,5 +76,6 @@ void explodeSSD(std::string link, std::vector<Proxy> &nodes);
 void explodeSub(std::string sub, std::vector<Proxy> &nodes);
 int explodeConf(const std::string &filepath, std::vector<Proxy> &nodes);
 int explodeConfContent(const std::string &content, std::vector<Proxy> &nodes);
-
+void explodeStdVless(std::string vless, Proxy &node);
+void explodeVless(std::string vless, Proxy &node);
 #endif // SUBPARSER_H_INCLUDED

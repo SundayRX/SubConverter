@@ -1143,6 +1143,62 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
 
             vmessConstruct(node, group, ps, server, port, "", id, aid, net, cipher, path, host, edge, tls, sni, udp, tfo, scv, tribool(), underlying_proxy);
             break;
+        case "vless"_hash:
+            group = XRAY_DEFAULT_GROUP;
+
+            singleproxy["uuid"] >>= id;
+            singleproxy["alterId"] >>= aid;
+            net = singleproxy["network"].IsDefined() ? safe_as<std::string>(singleproxy["network"]) : "tcp";
+            sni = singleproxy["sni"].IsDefined() ? safe_as<std::string>(singleproxy["sni"]) : safe_as<std::string>(
+                    singleproxy["servername"]);
+            switch (hash_(net)) {
+                case "http"_hash:
+                    singleproxy["http-opts"]["path"][0] >>= path;
+                    singleproxy["http-opts"]["headers"]["Host"][0] >>= host;
+                    edge.clear();
+                    break;
+                case "ws"_hash:
+                    if (singleproxy["ws-opts"].IsDefined()) {
+                        path = singleproxy["ws-opts"]["path"].IsDefined() ? safe_as<std::string>(
+                                singleproxy["ws-opts"]["path"]) : "/";
+                        singleproxy["ws-opts"]["headers"]["Host"] >>= host;
+                        singleproxy["ws-opts"]["headers"]["Edge"] >>= edge;
+                    } else {
+                        path = singleproxy["ws-path"].IsDefined() ? safe_as<std::string>(singleproxy["ws-path"])
+                                                                  : "/";
+                        singleproxy["ws-headers"]["Host"] >>= host;
+                        singleproxy["ws-headers"]["Edge"] >>= edge;
+                    }
+                    break;
+                case "h2"_hash:
+                    singleproxy["h2-opts"]["path"] >>= path;
+                    singleproxy["h2-opts"]["host"][0] >>= host;
+                    edge.clear();
+                    break;
+                case "grpc"_hash:
+                    singleproxy["servername"] >>= host;
+                    singleproxy["grpc-opts"]["grpc-service-name"] >>= path;
+                    edge.clear();
+                    break;
+            }
+
+            tls = safe_as<std::string>(singleproxy["tls"]) == "true" ? "tls" : "";
+            if (singleproxy["reality-opts"].IsDefined()) {
+                host = singleproxy["sni"].IsDefined() ? safe_as<std::string>(singleproxy["sni"])
+                                                      : safe_as<std::string>(singleproxy["servername"]);
+                printf("host:%s", host.c_str());
+                singleproxy["reality-opts"]["public-key"] >>= pbk;
+                singleproxy["reality-opts"]["short-id"] >>= sid;
+            }
+            singleproxy["flow"] >>= flow;
+            singleproxy["client-fingerprint"] >>= fp;
+            singleproxy["alpn"] >>= alpnList;
+            singleproxy["packet-encoding"] >>= packet_encoding;
+            bool vless_udp;
+            singleproxy["udp"] >> vless_udp;
+            vlessConstruct(node, XRAY_DEFAULT_GROUP, ps, server, port, type, id, aid, net, "auto", flow, mode, path,
+                           host, "", tls, pbk, sid, fp, sni, alpnList,packet_encoding,udp);
+            break;
         case "ss"_hash:
             group = SS_DEFAULT_GROUP;
 
@@ -2419,6 +2475,112 @@ int explodeConfContent(const std::string &content, std::vector<Proxy> &nodes)
 
     return !nodes.empty();
 }
+void explodeVless(std::string vless, Proxy &node) {
+    if (regMatch(vless, "vless://(.*?)@(.*)")) {
+        explodeStdVless(vless, node);
+        return;
+    }
+}
+
+void explodeStdVless(std::string vless, Proxy &node) {
+    std::string add, port, type, id, aid, net, flow, pbk, sid, fp, mode, path, host, tls, remarks, sni;
+    std::string addition;
+    vless = vless.substr(8);
+    string_size pos;
+
+    pos = vless.rfind("#");
+    if (pos != vless.npos) {
+        remarks = urlDecode(vless.substr(pos + 1));
+        vless.erase(pos);
+    }
+    const std::string stdvless_matcher = R"(^([\da-f]{4}(?:[\da-f]{4}-){4}[\da-f]{12})@\[?([\d\-a-zA-Z:.]+)\]?:(\d+)(?:\/?\?(.*))?$)";
+    if (regGetMatch(vless, stdvless_matcher, 5, 0, &id, &add, &port, &addition))
+        return;
+
+    tls = getUrlArg(addition, "security");
+    net = getUrlArg(addition, "type");
+    flow = getUrlArg(addition, "flow");
+    pbk = getUrlArg(addition, "pbk");
+    sid = getUrlArg(addition, "sid");
+    fp = getUrlArg(addition, "fp");
+    std::string packet_encoding = getUrlArg(addition, "packet-encoding");
+    std::string alpn = getUrlArg(addition, "alpn");
+    std::vector<std::string> alpnList;
+    if (!alpn.empty()) {
+        alpnList.push_back(alpn);
+    }
+    switch (hash_(net)) {
+        case "tcp"_hash:
+        case "ws"_hash:
+        case "h2"_hash:
+            type = getUrlArg(addition, "headerType");
+            host = getUrlArg(addition, strFind(addition, "sni") ? "sni" : "host");
+            path = getUrlArg(addition, "path");
+            break;
+        case "grpc"_hash:
+            host = getUrlArg(addition, "sni");
+            path = getUrlArg(addition, "serviceName");
+            mode = getUrlArg(addition, "mode");
+            break;
+        case "quic"_hash:
+            type = getUrlArg(addition, "headerType");
+            host = getUrlArg(addition, strFind(addition, "sni") ? "sni" : "quicSecurity");
+            path = getUrlArg(addition, "key");
+            break;
+        default:
+            return;
+    }
+
+    if (remarks.empty())
+        remarks = add + ":" + port;
+    sni = getUrlArg(addition, "sni");
+    vlessConstruct(node, XRAY_DEFAULT_GROUP, remarks, add, port, type, id, aid, net, "auto", flow, mode, path, host, "",
+                   tls, pbk, sid, fp, sni, alpnList,packet_encoding);
+    return;
+}
+
+void vlessConstruct(Proxy &node, const std::string &group, const std::string &remarks, const std::string &add,
+                    const std::string &port, const std::string &type, const std::string &id, const std::string &aid,
+                    const std::string &net, const std::string &cipher, const std::string &flow, const std::string &mode,
+                    const std::string &path, const std::string &host, const std::string &edge, const std::string &tls,
+                    const std::string &pbk, const std::string &sid, const std::string &fp, const std::string &sni,
+                    const std::vector<std::string> &alpnList, const std::string &packet_encoding,
+                    tribool udp, tribool tfo,
+                    tribool scv, tribool tls13)
+{
+    commonConstruct(node, ProxyType::VLESS, group, remarks, add, port, udp, tfo, scv, tls13);
+    node.UserId = id.empty() ? "00000000-0000-0000-0000-000000000000" : id;
+    node.AlterId = to_int(aid);
+    node.EncryptMethod = cipher;
+    node.TransferProtocol = net.empty() ? "tcp" : type == "http" ? "http"
+                                                                 : net;
+    node.Edge = edge;
+    node.Flow = flow;
+    node.FakeType = type;
+    node.TLSSecure = tls == "tls" || tls == "xtls" || tls == "reality";
+    node.PublicKey = pbk;
+    node.ShortId = sid;
+    node.Fingerprint = fp;
+    node.ServerName = sni;
+    node.AlpnList = alpnList;
+    node.PacketEncoding = packet_encoding;
+    switch (hash_(net))
+    {
+    case "grpc"_hash:
+        node.Host = host;
+        node.GRPCMode = mode.empty() ? "gun" : mode;
+        node.GRPCServiceName = path.empty() ? "/" : urlEncode(urlDecode(trim(path)));
+        break;
+    case "quic"_hash:
+        node.QUICSecure = host;
+        node.QUICSecret = path.empty() ? "/" : trim(path);
+        break;
+    default:
+        node.Host = (host.empty() && !isIPv4(add) && !isIPv6(add)) ? add.data() : trim(host);
+        node.Path = path.empty() ? "/" : urlDecode(trim(path));
+        break;
+    }
+}
 
 void explode(const std::string &link, Proxy &node)
 {
@@ -2426,6 +2588,8 @@ void explode(const std::string &link, Proxy &node)
         explodeSSR(link, node);
     else if(startsWith(link, "vmess://") || startsWith(link, "vmess1://"))
         explodeVmess(link, node);
+    else if (strFind(link, "vless://") || strFind(link, "vless1://"))
+        explodeVless(link, node);
     else if(startsWith(link, "ss://"))
         explodeSS(link, node);
     else if(startsWith(link, "socks://") || startsWith(link, "https://t.me/socks") || startsWith(link, "tg://socks"))
@@ -2441,6 +2605,9 @@ void explode(const std::string &link, Proxy &node)
     else if(isLink(link))
         explodeHTTPSub(link, node);
 }
+
+
+
 
 void explodeSub(std::string sub, std::vector<Proxy> &nodes)
 {
