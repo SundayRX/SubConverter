@@ -10,6 +10,7 @@
 #include "utils/string_hash.h"
 #include "utils/urlencode.h"
 #include "utils/yamlcpp_extra.h"
+#include "utils/logger.h"
 #include "config/proxy.h"
 #include "subparser.h"
 
