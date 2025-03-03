@@ -1070,6 +1070,7 @@ void explodeNetch(std::string netch, Proxy &node)
 
 void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
 {
+    writeLog(LOG_TYPE_ERROR, "subparser:explodeClash ");
     std::string proxytype, ps, server, port, cipher, group, password, underlying_proxy; //common
     std::string type = "none", id, aid = "0", net = "tcp", path, host, edge, tls, sni; //vmess
     std::string plugin, pluginopts, pluginopts_mode, pluginopts_host, pluginopts_mux; //ss
@@ -1637,6 +1638,7 @@ void parsePeers(Proxy &node, const std::string &data)
 
 bool explodeSurge(std::string surge, std::vector<Proxy> &nodes)
 {
+    writeLog(LOG_TYPE_ERROR, "subparser:explodeSurge ");
     std::multimap<std::string, std::string> proxies;
     uint32_t i, index = nodes.size();
     INIReader ini;
@@ -2472,6 +2474,7 @@ int explodeConfContent(const std::string &content, std::vector<Proxy> &nodes)
         explodeNetchConf(content, nodes);
         break;
     default:
+        writeLog(LOG_TYPE_ERROR, "explodeConfContent:default ");
         //try to parse as a local subscription
         explodeSub(content, nodes);
     }
