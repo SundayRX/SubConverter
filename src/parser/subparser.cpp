@@ -1078,6 +1078,8 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
     std::string ip, ipv6, private_key, public_key, mtu; //wireguard
     std::string ports, obfs_protocol, up, up_speed, down, down_speed, auth, auth_str,/* obfs, sni,*/ fingerprint, ca, ca_str, recv_window_conn, recv_window, disable_mtu_discovery, hop_interval, alpn; //hysteria
     std::string obfs_password, cwnd; //hysteria2
+    std::string pbk,sid,flow,fp,packet_encoding,mode; //vless
+    std::vector<std::string> alpnList;
     string_array dns_server;
     tribool udp, tfo, scv;
     Node singleproxy;
