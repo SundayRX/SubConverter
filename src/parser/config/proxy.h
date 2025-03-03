@@ -92,6 +92,7 @@ struct Proxy
     String QUICSecret;
 
     tribool UDP;
+    tribool XUDP;
     tribool TCPFastOpen;
     tribool AllowInsecure;
     tribool TLS13;
